@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <script type="text/javascript" src="//cdn.bootcss.com/vue/1.0.15/vue.js"></script>
+        <script type="text/javascript" src="//cdn.bootcss.com/jquery/1.12.0/jquery.js"></script>
+        <!-- // <script type="text/javascript" src="jquery-1.9.1.min.js"></script> -->
+        <!-- // <script type="text/javascript" src="vue.min.js"></script> -->
+
+    </head>
+    <style type="text/css">
+    table .ac {
+        background: green;
+        color: white;
+    }
+    table .wa {
+        background: #600;
+        color: white;
+    }
+    </style>
+    <body>
+    <div id="board">
+        <input type="text" v-model="view_time" placeholder="edit me">
+        <span>{{ view_time }}</span>
+        <table >
+            <thead>
+                <th>Rank</th>
+                <th>user</th>
+                <th>Solved</th>
+                <th>Penalty</th>
+                <th v-for="label in labels"> {{ label }}</th>
+            </thead>
+            <tbody>
+                <tr v-for="line in board">
+                    <td> {{ line.rank }}</td>
+                    <td> {{ line.user }}</td>
+                    <td> {{ line.sovled }}</td>
+                    <td> {{ line.penalty }}</td>
+                    <td v-for="label in labels" class="{{ line.problems[label].status }}"><span v-if="line.problems[label].status == 'ac'">{{ Math.floor(line.problems[label].ac_time / 60) }}</span><span v-if="line.problems[label].failed > 0">(-{{ line.problems[label].failed }})</td>
+
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script type="text/javascript">
+    var submit_status = [];
+    var contest_start_time = new Date("2014-05-10 12:00:00");
+    var contest_length = 5 * 3600;
+    var labels = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
+    var board_data = {};
+    var UserData = function(user) {
+        this.user = user;
+        this.accepted = {};
+        this.penalties = {}
+        for (var i in labels) {
+            this.penalties[labels[i]] = []; // times submited
+            this.accepted[labels[i]] = 0;
+        }
+        this.sovled = 0;
+        this.penalty = 0;
+    }
+    $.getJSON('./rank.json', function(status) {
+        submit_status = status;
+        for (var i in status) {
+            status[i].submittime = (new Date(status[i].submittime) - contest_start_time) / 1000; // seconds
+        }
+        submit_status.sort(function(a, b) {
+            return a.submittime - b.submittime;
+        });
+        for (var i in status) {
+            if (status[i].submittime < 0 || status[i].submittime > contest_length)
+                continue;
+            user_key = 'u_' + status[i].user;
+            if (!(user_key in board_data)) {
+                board_data[user_key] = new UserData(status[i].user);
+            }
+            var label = submit_status[i].contest_label;
+            if (board_data[user_key].accepted[label])
+                continue;
+            board_data[user_key].penalties[label].push(submit_status[i].submittime);
+            if (submit_status[i].status == 'Accepted') {
+                board_data[user_key].accepted[label] = true;
+                board_data[user_key].sovled++;
+                board_data[user_key].penalty += 20 * (board_data[user_key].penalties[label].length - 1) + Math.floor(submit_status[i].submittime / 60);
+            }
+        }
+        console.log(board_data);
+        vm.$set('board_data', board_data);
+        // new_vue();
+    });
+    var BoardLine = function(user_data) {
+        this.user_data = user_data;
+        this.user = user_data.user;
+        this.rank = 0;
+        this.sovled = 0;
+        this.penalty = 0;
+        this.problems = {}
+        for (var i in labels) {
+            this.problems[labels[i]] = {
+                failed: 0,
+                ac_time: 0,
+                status: null
+            }
+        }
+    }
+    // var new_vue = function(){
+    Vue.config.debug = true;
+    var vm = new Vue({
+        el: '#board',
+        data: {
+            labels: labels,
+            board_data: {},
+            view_time: 300
+        },
+        computed: {            
+            // view_time: function() {
+            //     re
+            // },
+            board: function() {
+                var board = [];
+                for (var key in this.board_data) { // 
+                    var line = new BoardLine(this.board_data[key]);
+                    for (var l in self.labels) {
+                        var label = self.labels[l];
+                        var p = line.problems[label];
+                        for (var i = 0; i < line.user_data.penalties[label].length && line.user_data.penalties[label][i] <= this.view_time * 60; i++) { // str * 60 result integer
+                            p.status = 'wa';
+                            p.failed++;
+                        }
+                        if (line.user_data.accepted[label] && p.failed == line.user_data.penalties[label].length) { // Accepted
+                            p.failed--;
+                            p.ac_time = line.user_data.penalties[label][line.user_data.penalties[label].length - 1];
+                            p.status = 'ac';
+                            line.sovled ++;
+                            line.penalty += 20 * p.failed + Math.floor(p.ac_time / 60);
+                        }
+                    }
+                    board.push(line);
+                }
+                board.sort(function(a, b) {
+                    if (a.sovled != b.sovled)
+                        return -(a.sovled - b.sovled);
+                    return a.penalty - b.penalty;
+                });
+                for (var i = 0; i < board.length;i ++)
+                    board[i].rank = i + 1;
+                return board;
+            }
+        }
+    });
+    // };
+    </script>
+    </body>
+</html>
