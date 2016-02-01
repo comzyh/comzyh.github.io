@@ -31,12 +31,14 @@
                 <th v-for="label in labels"> {{ label }}</th>
             </thead>
             <tbody>
-                <tr v-for="line in board">
+                <tr v-for="line in board" track-by="user">
                     <td> {{ line.rank }}</td>
                     <td> {{ line.user }}</td>
                     <td> {{ line.sovled }}</td>
                     <td> {{ line.penalty }}</td>
-                    <td v-for="label in labels" class="{{ line.problems[label].status }}"><span v-if="line.problems[label].status == 'ac'">{{ Math.floor(line.problems[label].ac_time / 60) }}</span><span v-if="line.problems[label].failed > 0">(-{{ line.problems[label].failed }})</td>
+                    <td v-for="label in labels" class="{{ line.problems[label].status }}" track-by="$index">
+                        {{ line.problems[label].text }}
+                    </td>
 
                 </tr>
             </tbody>
@@ -83,8 +85,7 @@
                 board_data[user_key].sovled++;
                 board_data[user_key].penalty += 20 * (board_data[user_key].penalties[label].length - 1) + Math.floor(submit_status[i].submittime / 60);
             }
-        }
-        console.log(board_data);
+        }        
         vm.$set('board_data', board_data);
         // new_vue();
     });
@@ -99,12 +100,13 @@
             this.problems[labels[i]] = {
                 failed: 0,
                 ac_time: 0,
-                status: null
+                status: null,
+                text: ""
             }
         }
     }
     // var new_vue = function(){
-    Vue.config.debug = true;
+    // Vue.config.debug = true;
     var vm = new Vue({
         el: '#board',
         data: {
@@ -133,7 +135,12 @@
                             p.status = 'ac';
                             line.sovled ++;
                             line.penalty += 20 * p.failed + Math.floor(p.ac_time / 60);
+                            p.text = "" + Math.floor(p.ac_time / 60);
+                            if (p.failed)
+                                p.text += "(-" + p.failed + ")";
                         }
+                        else if (p.failed)
+                            p.text = "-" + p.failed;
                     }
                     board.push(line);
                 }
