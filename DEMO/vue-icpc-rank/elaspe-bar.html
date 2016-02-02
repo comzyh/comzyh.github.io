@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <script type="text/javascript" src="//cdn.bootcss.com/vue/1.0.15/vue.js"></script>
+    </head>
+    <body >
+        <div id="elaspe">
+            <elaspebar></elaspebar>    
+        </div>
+    </body>
+    <script type="text/x-template" id="elaspebar-template">
+        <div style="width:100%;height:5px;padding: 5px 5px 5px 5px;">
+            <div style="width:100%;height:5px;background-color:#eee;position:relative;">
+                <div style="background-color:#ccc;height:5px;float: left;" v-bind:style="{ width: percentage + '%' }"></div>
+                <div style="height:13px;width:13px;border: 1px solid black;border-radius: 2px;margin-left: -7.5px;margin-top: -5px;position:absolute;" v-bind:style="{ backgroundColor: dragBoxColor, left: percentage + '%'}" v-on:mousedown="beginDraging" v-on:dragstart="beginDraging" v-on:mouseup="endDraging" v-on:mousemove="Draging"></div>
+            </div>
+        </div>
+    </script>
+    <script type="text/javascript">
+        Vue.config.debug = true;
+        Vue.component('elaspebar', {
+          template: '#elaspebar-template',
+          props: ['length', 'position'],
+          data: function() {
+            return {
+              percentage: 44.5,
+              draging: false,
+              start_x:0,
+              start_y:0,
+              start_percentage:0
+            };
+          },
+          computed: {
+            dragBoxColor: function() {
+              if (this.draging)
+                return "#777";
+              else
+                return "#ccc";
+            },
+            offsetWidth: function(){
+              return this.$el.children[0].offsetWidth;
+            }
+          },
+          methods: {
+            beginDraging: function(event) {
+              console.log("beginDraging", event);
+              this.draging=true;
+              this.start_x = event.pageX;
+              this.start_y = event.pageY;
+              this.start_percentage = this.percentage;
+            },
+            endDraging: function() {
+              this.draging=false;
+            },
+            Draging: function(event){
+              if (this.draging){
+                this.percentage = this.start_percentage + (event.pageX - this.start_x) / this.offsetWidth * 100;
+                // this.percentage = 90;
+                console.log(this.percentage);  
+              }
+            }
+          }
+        });
+        var demo = new Vue({
+          el: '#elaspe',
+          data: {
+            treeData: 1
+          }
+        });
+    </script>
+</html>
