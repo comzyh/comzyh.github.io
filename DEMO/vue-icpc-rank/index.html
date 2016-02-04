@@ -21,8 +21,8 @@
     <body>
     <div id="board">
         <input type="text" v-model="view_time" placeholder="edit me" number>
-        
-        <span>{{ view_time }}</span>
+        <elaspebar :duration="300" :elaspe="view_time" v-on:change="elaspeChange" v-on:drag="dragChange"></elaspebar>
+        <span>{{ draging_elaspe }}</span>
         <table >
             <thead>
                 <th>Rank</th>
@@ -45,6 +45,80 @@
             </tbody>
         </table>
     </div>
+    <script type="text/x-template" id="elaspebar-template">
+        <div style="width:100%;height:5px;padding: 5px 7.5px 5px 7.5px;box-sizing: border-box;">
+            <div style="width:100%;height:5px;background-color:#eee;position:relative;">
+                <div style="background-color:#ccc;height:5px;float: left;" v-bind:style="{ width: percentage + '%' }"></div>
+                <span style="display: block; height: 13px; width: 13px; border: 1px solid rgba(132, 132, 132, 0.6); border-radius: 2px; margin-left: -7.5px; margin-top: -5px; position: absolute;" v-bind:style="{ backgroundColor: dragBoxColor, left: percentage + '%'}" v-on:mousedown="beginDraging" ondragstart="return false;"></span>
+            </div>
+        </div>
+    </script>
+    <script type="text/javascript">
+      Vue.config.debug = true;
+      Vue.component('elaspebar', {
+        template: '#elaspebar-template',
+        props: {
+          duration: Number,
+          elaspe: {
+            type: Number,
+            twoWay: false
+          }
+        },
+        watch: {
+          elaspe: function(val, oldVal) {
+            this.percentage = val / this.duration * 100;
+          }
+        },
+        data: function() {
+          return {
+            // percentage: this.elaspe / this.duration * 100,
+            draging: false,
+            start_x: 0,
+            start_y: 0,
+            start_percentage: 0
+          };
+        },
+        computed: {
+          dragBoxColor: function() {
+            if (this.draging)
+              return "#777";
+            else
+              return "#ccc";
+          },
+          percentage: function() {
+            return this.elaspe / this.duration * 100;
+          }
+        },
+        methods: {
+          beginDraging: function(event) {
+            console.log("beginDraging", event);
+            this.draging = true;
+            this.start_x = event.pageX;
+            this.start_y = event.pageY;
+            this.start_percentage = this.percentage;
+            var $this = this;
+            var doc_mousemove = function(event) {
+              var percentage = $this.start_percentage + (event.pageX - $this.start_x) / $this.$el.children[0].offsetWidth * 100;
+              if (percentage < 0)
+                percentage = 0;
+              if (percentage > 100)
+                percentage = 100;
+              // $this.percentage = percentage;
+              $this.elaspe = Math.floor(percentage * $this.duration / 100);
+              $this.$emit("drag", Math.floor($this.percentage * $this.duration / 100));
+            };
+            var doc_mouseup = function(event) {
+              $this.draging = false;
+              document.removeEventListener("mousemove", doc_mousemove);
+              document.removeEventListener("mouseup", doc_mouseup);
+              $this.$emit("change", Math.floor($this.percentage * $this.duration / 100));
+            };
+            document.addEventListener("mousemove", doc_mousemove);
+            document.addEventListener("mouseup", doc_mouseup);
+          }
+        }
+      });
+    </script>
     <script type="text/javascript">
     var submit_status = [];
     var contest_start_time = new Date("2014-05-10 12:00:00");
@@ -113,7 +187,8 @@
         data: {
             labels: labels,
             board_data: {},
-            view_time: 300
+            view_time: 300,
+            draging_elaspe: 300
         },
         computed: {            
             // view_time: function() {
@@ -153,6 +228,14 @@
                 for (var i = 0; i < board.length;i ++)
                     board[i].rank = i + 1;
                 return board;
+            }
+        },
+        methods:{
+            elaspeChange:function(elaspe) {
+              this.view_time = elaspe;
+            },
+            dragChange:function(elaspe) {
+              this.draging_elaspe = elaspe;
             }
         }
     });
