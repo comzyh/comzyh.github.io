@@ -6,14 +6,25 @@
     </head>
     <body >
         <div id="elaspe">
-            <elaspebar></elaspebar>    
+            <label>elaspe: </label><input type="number" v-model="elaspe" number>
+            <label>duration: </label><input type="number" v-model="duration" number>
+            <elaspebar :duration="duration" :elaspe="elaspe" v-on:change="elaspeChange" v-on:drag="dragChange"></elaspebar>
+            <p>{{ draging_elaspe }} / {{ duration }} </p>
         </div>
+        <h1><a name="elaspebar" href="#elaspebar"></a>elaspebar</h1>
+        <h2><a name="属性" href="#属性"></a>属性</h2>
+        <ul>
+        <li><code>duration</code> ： 总时长</li><li><code>elaspe</code> : 流逝的时间</li></ul>
+        <h2 i><a name="事件" href="#事件"></a>事件</h2>
+        <ul>
+        <li><code>change</code> ： elaspe变化，当鼠标抬起时触发</li><li><code>drag</code> ： elaspe变化，当拖动滑块时触发</li></ul>
+
     </body>
     <script type="text/x-template" id="elaspebar-template">
-        <div style="width:100%;height:5px;padding: 5px 5px 5px 5px;">
+        <div style="width:100%;height:5px;padding: 5px 7.5px 5px 7.5px;box-sizing: border-box;">
             <div style="width:100%;height:5px;background-color:#eee;position:relative;">
                 <div style="background-color:#ccc;height:5px;float: left;" v-bind:style="{ width: percentage + '%' }"></div>
-                <span style="display:block;height:13px;width:13px;border: 1px solid black;border-radius: 2px;margin-left: -7.5px;margin-top: -5px;position:absolute;cursor:default;touch-action:none;" v-bind:style="{ backgroundColor: dragBoxColor, left: percentage + '%'}" v-on:mousedown="beginDraging" ondragstart="return false;"></span>
+                <span style="display: block; height: 13px; width: 13px; border: 1px solid rgba(132, 132, 132, 0.6); border-radius: 2px; margin-left: -7.5px; margin-top: -5px; position: absolute;" v-bind:style="{ backgroundColor: dragBoxColor, left: percentage + '%'}" v-on:mousedown="beginDraging" ondragstart="return false;"></span>
             </div>
         </div>
     </script>
@@ -21,10 +32,21 @@
         Vue.config.debug = true;
         Vue.component('elaspebar', {
           template: '#elaspebar-template',
-          props: ['length', 'position'],
+          props: {
+            duration: Number,
+            elaspe: {
+              type:Number,
+              twoWay: false
+            }
+          },
+          watch: {
+            elaspe: function (val, oldVal) {
+              this.percentage = val / this.duration * 100;
+            }
+          },
           data: function() {
             return {
-              percentage: 44.5,
+              // percentage: this.elaspe / this.duration * 100,
               draging: false,
               start_x:0,
               start_y:0,
@@ -37,6 +59,9 @@
                 return "#777";
               else
                 return "#ccc";
+            },
+            percentage: function() {
+              return this.elaspe / this.duration * 100;
             }
           },
           methods: {
@@ -53,13 +78,15 @@
                   percentage = 0;
                 if (percentage > 100)
                   percentage = 100;
-                $this.percentage = percentage;
-                console.log($this.percentage, event.pageX, event.clientX);  
+                // $this.percentage = percentage;
+                $this.elaspe = Math.floor(percentage * $this.duration / 100);
+                $this.$emit("drag", Math.floor($this.percentage * $this.duration / 100));
               };
               var doc_mouseup = function(event) {
                 $this.draging = false;
                 document.removeEventListener("mousemove", doc_mousemove);
                 document.removeEventListener("mouseup", doc_mouseup);
+                $this.$emit("change", Math.floor($this.percentage * $this.duration / 100));
               };
               document.addEventListener("mousemove", doc_mousemove);
               document.addEventListener("mouseup", doc_mouseup);
@@ -69,7 +96,17 @@
         var demo = new Vue({
           el: '#elaspe',
           data: {
-            treeData: 1
+            duration: 20,
+            elaspe: 6,
+            draging_elaspe: 1200
+          },
+          methods:{
+            elaspeChange:function(elaspe) {
+              this.elaspe = elaspe;
+            },
+            dragChange:function(elaspe) {
+              this.draging_elaspe = elaspe;
+            }
           }
         });
     </script>
