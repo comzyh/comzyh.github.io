@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Vue picture select deom</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <style>
+        [v-cloak] {
+          display: none !important;
+        }
+
+        .clearfix:after {
+              visibility: hidden;
+              display: block;
+              font-size: 0;
+              content: " ";
+              clear: both;
+              height: 0;
+        }
+        .all-class-container li {
+            list-style: none;
+        }
+        .all-class-container li ul {
+            padding-left: 0;
+        }
+        .picture-list li {
+            list-style: none;
+            border: 2px ;
+            margin: 5px;
+            float: left;
+        }
+        .picture-list li.selected {
+            border-color: red;
+            border-style: solid;
+            margin: 3px;
+
+        }
+        .picture-list li img{
+            height: 150px;
+            width: 150px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <ul class="all-class-container">
+            <li v-for="row in data">
+                <div class="class-name">{{row.name}}</div>
+                <ul class="picture-list clearfix">
+                    <li class="clearfix" v-for="pic in row.data" v-bind:class="{ selected: pic.selected }">
+                        <img v-bind:src="pic.url" v-on:click="pic.selected = !pic.selected"/>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        <div class="output-json">
+            {{output_json}}
+        </div>
+    </div>
+
+</body>
+<script type="text/javascript">
+    var demo_data = [
+        {
+            'name': 'class1',
+            'data': [
+                '//wx4.sinaimg.cn/thumb150/6e5f8ad9ly1fu77ko0j2gj20b40b4t8o.jpg',
+                '//wx4.sinaimg.cn/thumb150/6e5f8ad9ly1fu77ko9j0qj20b40b43yi.jpg',
+            ]
+
+        },
+        {
+            'name': 'class2',
+            'data': [
+                'https://wx2.sinaimg.cn/thumb150/6fa6f4e3gy1fu7xc4ixrmj20hs0dcdlm.jpg',
+                'https://wx1.sinaimg.cn/thumb150/6fa6f4e3gy1fu7xc54fdcj20hs0dcdlz.jpg',
+                'https://wx2.sinaimg.cn/thumb150/6fa6f4e3gy1fu7xc5ozkaj20hr0andju.jpg',
+            ]
+        }
+    ]
+    var app = new Vue({
+      el: '#app',
+      data: {
+        data: []
+      },
+      mounted:function() {
+          for (var i = 0; i < demo_data.length; i++) {
+              var raw_class = demo_data[i];
+              var class_data = [];
+              for (var j = 0; j < raw_class['data'].length; j++) {
+                  class_data.push({
+                      'selected': false,
+                      'url':  raw_class['data'][j],
+                  });
+              }
+              var row = {
+                  'name': raw_class['name'],
+                  'data':class_data,
+              };
+              this.data.push(row);
+          }
+      },
+      computed: {
+          output_json: function() {
+              var output_data = []
+              for (var i = 0; i <  this.data.length; i++) {
+                  var row = this.data[i];
+                  var data = {
+                      'name': row.name,
+                      'selected': []
+                  }
+                  for (var j = 0; j < row.data.length; j++) {
+                      var pic = row.data[j];
+                      if (pic.selected) {
+                          data.selected.push(pic.url);
+                      }
+                  }
+                  output_data.push(data);
+              }
+              return JSON.stringify(output_data);
+          }
+      }
+    })
+</script>
+</html>
